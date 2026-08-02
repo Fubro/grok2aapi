@@ -1,0 +1,70 @@
+# =============================================================================
+# Grok2API — Render.com 部署配置
+# =============================================================================
+# 使用方式：
+#   1. Fork https://github.com/chenyme/grok2api 到你的 GitHub 账户
+#   2. 将 render.yaml 和 docker/render-entrypoint.sh 放到项目中
+#   3. 修改 Dockerfile 中的入口脚本（见下方说明）
+#   4. 在 Render Dashboard 中点击「New +」→「Blueprint」
+#   5. 连接你的仓库，Render 会自动识别此文件并部署
+# =============================================================================
+# Dockerfile 需要修改的一行：
+#   修改前：
+#     COPY --chmod=0755 docker/entrypoint.sh /usr/local/bin/grok2api-entrypoint
+#   修改后：
+#     COPY --chmod=0755 docker/render-entrypoint.sh /usr/local/bin/grok2api-entrypoint
+# =============================================================================
+
+services:
+  # ---------------------------------------------------------------------------
+  # 主服务：Grok2API 网关
+  # ---------------------------------------------------------------------------
+  - type: web
+    name: grok2api
+    runtime: docker
+    region: oregon                    # 可选：oregon / frankfurt / singapore / ohio
+    plan: free                        # 可选：free / starter / professional
+
+    # 构建与启动 —— 使用项目自带的 Dockerfile
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+
+    # 健康检查
+    healthCheckPath: /healthz
+
+    # -----------------------------------------------------------------------
+    # 环境变量 —— 会被 docker/render-entrypoint.sh 读取并生成 config.yaml
+    # -----------------------------------------------------------------------
+    envVars:
+      # ---- 基本配置 ----
+      - key: TZ
+        value: Asia/Shanghai
+
+      # ---- 安全密钥（首次部署时自动生成，后续保留） ----
+      - key: GROK2API_JWT_SECRET
+        generateValue: true
+
+      - key: GROK2API_CREDENTIAL_ENCRYPTION_KEY
+        generateValue: true
+
+      # ---- 初始管理员账号 ----
+      - key: GROK2API_ADMIN_USERNAME
+        value: admin
+
+      - key: GROK2API_ADMIN_PASSWORD
+        generateValue: true
+
+      # ---- 日志级别 ----
+      - key: GROK2API_LOG_LEVEL
+        value: info
+
+      # ---- 数据库连接（外部 PostgreSQL） ----
+      - key: GROK2API_DATABASE_URL
+        value: postgres://grok2api:N8MjNV195vILXgk5@138.2.88.182:5432/grok2api?sslmode=disable
+
+    # -----------------------------------------------------------------------
+    # 首次部署后，请登录管理端修改管理员密码。
+    # 登录后可在「设置」中管理出口代理、模型路由、客户端密钥等。
+    # 注意：GROK2API_CREDENTIAL_ENCRYPTION_KEY 一旦写入账号后不可更换，
+    # 否则已有凭据将无法解密。
+    # -----------------------------------------------------------------------
