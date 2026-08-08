@@ -141,7 +141,7 @@ audit:
   batchSize: 256
   flushInterval: 250ms
   commitDelay: 5ms
-  ledgerMode: enforce
+  ledgerMode: ${GROK2API_AUDIT_LEDGER_MODE:-observe}
   ledgerFailureThreshold: 1
   ledgerUnhealthyGrace: 10s
   ledgerQueueHighWatermarkPercent: 90
